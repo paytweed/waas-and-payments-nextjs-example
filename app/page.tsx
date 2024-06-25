@@ -19,7 +19,6 @@ export default function Home() {
     const web3provider = new BrowserProvider(provider);
     const signer = await web3provider.getSigner();
     const userAddress = await signer.getAddress();
-    console.log(userAddress);
     return userAddress;
   }
 
@@ -45,7 +44,6 @@ export default function Home() {
 
   async function handleBuynft() {
     const walletAddress = await getWalletAddress();
-    console.log(walletAddress);
     tweed.nft.buyWithFiat({
       nftId: "1",
       toWalletAddress: walletAddress,
