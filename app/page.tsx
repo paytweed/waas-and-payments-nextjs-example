@@ -1,16 +1,27 @@
 "use client";
 
-import { useAuth, useTweed } from "@paytweed/core-react";
+import { Network, useAuth, useTweed, useWeb3 } from "@paytweed/core-react";
 import { hooks } from "@paytweed/frontend-sdk-react";
+import { BrowserProvider } from "ethers";
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 
 export default function Home() {
   const { connect, logout } = useAuth();
   const { client, loading } = useTweed();
+  const { getEthereumProvider } = useWeb3();
   const tweed = hooks.useTweedFrontendSDK();
 
   const [isWalletExist, setIsWalletExist] = useState(false);
+
+  async function getWalletAddress() {
+    const provider = await getEthereumProvider(Network.ETHEREUM_SEPOLIA);
+    const web3provider = new BrowserProvider(provider);
+    const signer = await web3provider.getSigner();
+    const userAddress = await signer.getAddress();
+    console.log(userAddress);
+    return userAddress;
+  }
 
   async function handleWalletCreation() {
     if (isWalletExist) return;
@@ -32,9 +43,12 @@ export default function Home() {
     logout();
   }
 
-  function handleBuynft() {
+  async function handleBuynft() {
+    const walletAddress = await getWalletAddress();
+    console.log(walletAddress);
     tweed.nft.buyWithFiat({
       nftId: "1",
+      toWalletAddress: walletAddress,
     });
   }
 
