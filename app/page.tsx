@@ -1,54 +1,76 @@
 "use client";
-
 import { Network, useAuth, useTweed, useWeb3 } from "@paytweed/core-react";
 import { hooks } from "@paytweed/frontend-sdk-react";
 import { BrowserProvider } from "ethers";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import styles from "./page.module.css";
 
 export default function Home() {
-  const { connect, logout } = useAuth();
-  const { client, loading } = useTweed();
+  const { connect, logout, isAuthenticated } = useAuth();
+  const { client, loading: useTweedLoading } = useTweed();
   const { getEthereumProvider } = useWeb3();
   const tweed = hooks.useTweedFrontendSDK();
 
   const [isWalletExist, setIsWalletExist] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
-  async function getWalletAddress() {
-    const provider = await getEthereumProvider(Network.ETHEREUM_SEPOLIA);
-    const web3provider = new BrowserProvider(provider);
-    const signer = await web3provider.getSigner();
-    const userAddress = await signer.getAddress();
-    return userAddress;
-  }
+  const getWalletAddress = useCallback(async () => {
+    if (!useTweedLoading) return;
+    setIsLoading(true);
+    try {
+      const provider = await getEthereumProvider(Network.ETHEREUM_SEPOLIA);
+      const web3provider = new BrowserProvider(provider);
+      const signer = await web3provider.getSigner();
+      const userAddress = await signer.getAddress();
+      setWalletAddress(userAddress);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [getEthereumProvider, useTweedLoading]);
 
-  async function handleWalletCreation() {
-    if (isWalletExist) return;
-    await tweed.wallet.create();
-    setIsWalletExist(true);
-  }
+  const handleConnect = useCallback(async () => {
+    if (client) {
+      await connect({});
+      await getWalletAddress();
+    }
+  }, [client, connect, getWalletAddress]);
 
   useEffect(() => {
-    if (!isWalletExist) handleWalletCreation();
-  }, [isWalletExist]);
+    if (!isAuthenticated) {
+      handleConnect();
+    }
+  }, [isAuthenticated, handleConnect]);
 
-  function handleConnect() {
-    if (!client) return;
-    connect({});
-  }
+  useEffect(() => {
+    const checkIsWalletExist = async () => {
+      const isExist = await tweed.wallet.exists();
+      if (!isExist) {
+        await tweed.wallet.create();
+        setIsWalletExist(true);
+      }
+      setIsWalletExist(true);
+    };
 
-  function handleLogout() {
-    if (!client) return;
-    logout();
-  }
+    checkIsWalletExist();
+  }, [tweed]);
 
-  async function handleBuynft() {
-    const walletAddress = await getWalletAddress();
+  const handleLogout = useCallback(() => {
+    if (client) {
+      logout();
+    }
+  }, [client, logout]);
+
+  const handleBuynft = useCallback(async () => {
+    if (!walletAddress || !isWalletExist) return;
     tweed.nft.buyWithFiat({
       nftId: "1",
       toWalletAddress: walletAddress,
+      customMintParams: {
+        toAddress: walletAddress,
+      },
     });
-  }
+  }, [walletAddress, isWalletExist, tweed.nft]);
 
   return (
     <main className={styles.main}>
@@ -64,17 +86,29 @@ export default function Home() {
           </h3>
         </div>
         <div style={{ display: "flex", gap: "2rem" }}>
-          {loading ? (
+          {useTweedLoading ? (
             <h2> loading... </h2>
           ) : (
             <>
-              <button onClick={handleConnect} className={styles.button}>
+              <button
+                disabled={isLoading}
+                onClick={handleConnect}
+                className={styles.button}
+              >
                 Connect
               </button>
-              <button onClick={handleLogout} className={styles.button}>
+              <button
+                disabled={isLoading}
+                onClick={handleLogout}
+                className={styles.button}
+              >
                 Logout
               </button>
-              <button onClick={handleBuynft} className={styles.button}>
+              <button
+                disabled={isLoading}
+                onClick={handleBuynft}
+                className={styles.button}
+              >
                 Buy NFTs
               </button>
             </>
