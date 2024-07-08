@@ -62,7 +62,7 @@ export default function Home() {
   }, [client, logout]);
 
   const handleBuynft = useCallback(async () => {
-    handleConnect();
+    await handleConnect();
     if (!walletAddress || !isWalletExist) return;
     tweed.nft.buyWithFiat({
       nftId: "1",
