@@ -36,11 +36,11 @@ export default function Home() {
     }
   }, [client, connect, getWalletAddress]);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      handleConnect();
-    }
-  }, [isAuthenticated, handleConnect]);
+  // useEffect(() => {
+  //   if (!isAuthenticated) {
+  //     handleConnect();
+  //   }
+  // }, [isAuthenticated, handleConnect]);
 
   useEffect(() => {
     const checkIsWalletExist = async () => {
@@ -62,6 +62,7 @@ export default function Home() {
   }, [client, logout]);
 
   const handleBuynft = useCallback(async () => {
+    handleConnect();
     if (!walletAddress || !isWalletExist) return;
     tweed.nft.buyWithFiat({
       nftId: "1",
@@ -70,7 +71,7 @@ export default function Home() {
         toAddress: walletAddress,
       },
     });
-  }, [walletAddress, isWalletExist, tweed.nft]);
+  }, [handleConnect, walletAddress, isWalletExist, tweed.nft]);
 
   return (
     <main className={styles.main}>
