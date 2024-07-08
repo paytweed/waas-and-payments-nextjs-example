@@ -16,7 +16,7 @@ export default function Home() {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
   const getWalletAddress = useCallback(async () => {
-    if (!useTweedLoading) return;
+    //if (!useTweedLoading) return;
     setIsLoading(true);
     try {
       const provider = await getEthereumProvider(Network.ETHEREUM_SEPOLIA);
